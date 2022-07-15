@@ -52,6 +52,8 @@
 
 #define PKA_INVALID_OPERANDS    0x0
 
+uint64_t cpu_f_hz;
+
 // Start statistics counters. Returns the command number associated with
 // a statistic entry.
 static __pka_inline uint32_t pka_stats_start_cycles_cnt(uint32_t queue_num)
@@ -267,7 +269,7 @@ pka_instance_t pka_init_global(const char *name,
                             pka_get_rings_byte_order(PKA_HANDLE_INVALID);
     ret = pka_ring_lookup(pka_gbl_info->rings, ring_cnt,
                           pka_gbl_info->rings_byte_order,
-                          &pka_gbl_info->rings_mask,
+                          pka_gbl_info->rings_mask,
                           &pka_gbl_info->rings_cnt);
     if (ret)
     {
@@ -314,8 +316,8 @@ void pka_term_global(pka_instance_t instance)
                                         "longer usable\n");
 
         PKA_DEBUG(PKA_USER, "release PKA rings\n");
-        pka_ring_free(pka_gbl_info->rings, &pka_gbl_info->rings_mask,
-                        &pka_gbl_info->rings_cnt);
+        pka_ring_free(pka_gbl_info->rings, pka_gbl_info->rings_mask,
+                      &pka_gbl_info->rings_cnt);
 
         free(pka_gbl_info);
         pka_gbl_info = NULL;
@@ -344,7 +346,7 @@ pka_handle_t pka_init_local(pka_instance_t instance)
         return PKA_HANDLE_INVALID;
     }
 
-    local_info = calloc(sizeof(*local_info), 0);
+    local_info = calloc(sizeof(*local_info), 1);
     if (!local_info)
     {
         pka_atomic32_dec(&pka_gbl_info->workers_cnt);
@@ -383,7 +385,7 @@ uint32_t pka_get_rings_count(pka_instance_t instance)
     return 0;
 }
 
-uint32_t pka_get_rings_bitmask(pka_instance_t instance)
+uint8_t* pka_get_rings_bitmask(pka_instance_t instance)
 {
     if (instance == (pka_instance_t) pka_gbl_info->main_pid)
         return pka_gbl_info->rings_mask;

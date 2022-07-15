@@ -1,5 +1,6 @@
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -12,6 +13,9 @@
 
 static uint8_t RSA_VERIFY_EXPON[] = { 0x01, 0x00, 0x01 };
 
+ecc_mont_curve_t curve25519;
+ecc_mont_curve_t curve448;
+ 
 // All of the following constants are in big-endian format.
 
 //static char P256_p_string[] =
@@ -7019,6 +7023,19 @@ pka_status_t get_rand_bytes(pka_handle_t  handle,
             return FAILURE;
         close(fd);
         return SUCCESS;
+    }
+    else
+    {
+        if (errno == EACCES)
+        {
+            PKA_ERROR(PKA_TESTS,
+                "unpriviliged user, access denied for /dev/hwrng\n");
+        }
+        else
+        {
+            PKA_ERROR(PKA_TESTS,  "failed to open /dev/hwrng\n");
+        }
+        exit(1);
     }
 
     return FAILURE;
